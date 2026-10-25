@@ -1,0 +1,17 @@
+{
+  "name": "agent-productivity",
+  "description": "Skills that build other skills, for any agent harness. Includes factory-creator, which turns a desired outcome into a shareable, self-improving set of skills built on the director pattern (with adapters for Claude Code and a portable Agent Skills bundle), and factory-creator-learn, which improves factory-creator from experience.",
+  "version": "0.3.0",
+  "author": {
+    "name": "Ian Lee"
+  },
+  "keywords": [
+    "skills",
+    "plugins",
+    "director",
+    "subagents",
+    "orchestration"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/ianlee74/ai-agents"
+}

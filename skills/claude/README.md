@@ -1,8 +1,11 @@
-# Claude Skills
+# Claude Code-only Skills
 
-Claude-specific skills live here.
+Skills that only make sense in Claude Code live here: they depend on Claude Code features and have no
+portable form.
 
-Use this folder for skills that are optimized for Anthropic's Claude models, including prompts, reusable patterns, and package metadata for publishing as marketplace plugins.
+Most skills don't belong here. If a skill can be written in the open
+[Agent Skills](https://agentskills.io/specification) format with its Claude Code specifics in a
+reference file, put it at the top level of `skills/` instead (see [../README.md](../README.md)).
 
 ## Suggested layout
 

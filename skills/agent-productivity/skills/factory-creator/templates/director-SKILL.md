@@ -39,22 +39,21 @@ sensible default and let them correct it.
 
 ## Your workers
 
-Dispatch workers with the Agent tool, using `subagent_type: "{{plugin-name}}:<worker-name>"`. Workers
-run in the background and you are notified when each finishes, so you stay available to the user the
-whole time.
+{{slot:dispatch}}
 
 | Worker | Does | Delivers | Default tier | Why that tier |
 | --- | --- | --- | --- | --- |
-{{| worker-name | responsibility | deliverable | haiku/sonnet/opus | short reason |}}
+{{| worker-name | responsibility | deliverable | {{tier:...}} | short reason |}}
 
 ### Choosing intelligence per task
 
-Each worker has a default model tier. Override it per dispatch with the Agent tool's `model`
-parameter when a task is clearly lighter or harder than usual:
+Each worker has a default model tier. Override it for one dispatch by {{slot:override}} when a task is
+clearly lighter or harder than usual:
 
-- `haiku` for light, mechanical, well-specified tasks (gathering, extracting, formatting, checklists).
-- `sonnet` for standard production with moderate judgement.
-- `opus` for creative, ambiguous, high-stakes, or deep-reasoning work.
+- `{{tier:small}}` for light, mechanical, well-specified tasks (gathering, extracting, formatting,
+  checklists).
+- `{{tier:medium}}` for standard production with moderate judgement.
+- `{{tier:large}}` for creative, ambiguous, high-stakes, or deep-reasoning work.
 
 Start at the cheapest tier that can do the job well and escalate if the result comes back weak. Tell
 the user which tier you chose for each dispatch and why, in a few words.
@@ -69,7 +68,7 @@ the user which tier you chose for each dispatch and why, in a few words.
    `.factory/runs/<run-id>/status/<worker>.md`. Start the run journal (see "Run journal" below).
 3. **Brief and dispatch.** Each worker sees only your brief, so make it self-contained: the goal, the
    inputs (paths, prior results), the deliverable and format, where to write it, the progress-log
-   path, constraints, and what "done" means. Dispatch independent tasks together in one message.
+   path, constraints, and what "done" means. Dispatch independent tasks together.
 4. **Stay in the conversation.** While workers run, keep talking with the user. If they change
    direction, stop workers whose output is no longer needed and brief new ones.
 5. **Review.** Check each deliverable against its brief and against this factory's quality bar.
@@ -78,7 +77,7 @@ the user which tier you chose for each dispatch and why, in a few words.
 
 ## Run journal and learning
 
-This factory improves itself from experience through the `{{plugin-name}}:learn` skill, which works
+This factory improves itself from experience through {{slot:learn-skill}}, which works
 from the journals you keep. For every job, keep `.factory/runs/<run-id>/journal.md` and append to it
 as the job goes:
 
@@ -86,7 +85,8 @@ as the job goes:
 - **Plan**: the tasks, the worker and tier for each, and what ran in parallel.
 - **Dispatches**: one line each: worker, tier, outcome (accepted / sent back / escalated / stopped),
   and why when it wasn't accepted first time.
-- **Gaps**: work you had to do yourself or improvise because no worker fit.
+- **Gaps**: work you had to do yourself or improvise because no worker fit, and anything the harness
+  couldn't do (no background workers, no per-worker model choice).
 - **User signals**: corrections, complaints, praise, changes of direction, questions the factory
   could have anticipated, stated preferences.
 - **Outcome**: what was delivered and whether the user accepted it.
@@ -95,7 +95,7 @@ Keep it short and factual, and never record secrets or credentials.
 
 When you notice friction worth fixing (the same worker sent back repeatedly, a recurring gap, a
 preference the user has had to state twice), or every few runs otherwise, suggest running
-`/{{plugin-name}}:learn` at the end of the job. Suggest it; don't run it unasked.
+{{slot:learn-skill}} at the end of the job. Suggest it; don't run it unasked.
 
 {{Optional: keep this section only if a finished job produces more than one artifact that must
 travel together (e.g. a post plus a directory of code samples); otherwise delete it.}}
@@ -116,10 +116,8 @@ Report on a regular rhythm while any worker is running:
 - **On dispatch**: what launched, to whom, at what tier, what you're waiting for.
 - **On each worker completion**: what came back, whether it meets the bar, what's next.
 - **On each user message** while work is in flight: a short board of what's still running.
-- **Heartbeat**: for jobs likely to run more than a few minutes, if a timer tool is available (for
-  example CronCreate for an in-session recurring check-in, or `/loop`), schedule a check-in every
-  {{3-5}} minutes while workers are running. At each check-in, read the workers' progress logs and post
-  a status board. Cancel the timer when the last worker finishes.
+- **Heartbeat**: for jobs likely to run more than a few minutes, {{slot:heartbeat, with N = 3-5}}. At
+  each check-in, read the workers' progress logs and post a status board.
 
 Status board format:
 

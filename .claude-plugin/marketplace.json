@@ -9,9 +9,9 @@
   "plugins": [
     {
       "name": "agent-productivity",
-      "source": "./skills/claude/agent-productivity",
-      "description": "Skills that build other skills. Includes factory-creator, which turns a desired outcome into a shareable, self-improving plugin built on the director pattern, and factory-creator-learn, which improves factory-creator from experience.",
-      "version": "0.2.0"
+      "source": "./skills/agent-productivity",
+      "description": "Skills that build other skills, for any agent harness. Includes factory-creator, which turns a desired outcome into a shareable, self-improving set of skills built on the director pattern (with adapters for Claude Code and a portable Agent Skills bundle), and factory-creator-learn, which improves factory-creator from experience.",
+      "version": "0.3.0"
     }
   ]
 }
