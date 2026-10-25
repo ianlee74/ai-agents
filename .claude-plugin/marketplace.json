@@ -1,0 +1,17 @@
+{
+  "name": "ianlee74-ai-agents",
+  "owner": {
+    "name": "Ian Lee"
+  },
+  "metadata": {
+    "description": "AI agent skills and plugins from the ianlee74/ai-agents repository."
+  },
+  "plugins": [
+    {
+      "name": "agent-productivity",
+      "source": "./skills/claude/agent-productivity",
+      "description": "Skills that build other skills. Includes factory-creator, which turns a desired outcome into a shareable, self-improving plugin built on the director pattern, and factory-creator-learn, which improves factory-creator from experience.",
+      "version": "0.2.0"
+    }
+  ]
+}
