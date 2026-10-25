@@ -45,3 +45,32 @@ there was no `learn` history; changes are limited to template gaps and validatio
 Considered and not applied (Ian's call): a "temporary/test location" option in step 2 and inferring
 the marketplace name from the repo README title; a design tip for breaking apparent mutual
 dependencies between roles (one-off).
+
+## 2026-10-25 · v0.3.0 · Harness-agnostic core
+
+At Ian's request: the repo is going open source and he'll test with several agent harnesses, so the
+skills should be harness-agnostic wherever possible.
+
+- **The bundle moved** from `skills/claude/agent-productivity/` to `skills/agent-productivity/`. It's
+  still a Claude Code plugin (the marketplace `source` changed), and it's also a plain Agent Skills
+  bundle. The adapter files live inside the bundle rather than in a separate Claude layer because
+  Claude Code only installs files inside the plugin folder.
+- **Director pattern made harness-neutral.** Tiers are `small` / `medium` / `large` instead of
+  `haiku` / `sonnet` / `opus`; tool names left the contract. New rule 10 says how to keep each rule's
+  intent when a harness lacks background workers, per-worker model choice, subagents, or a timer. This
+  is a contract change for every future factory.
+- **Harness adapters.** `references/harnesses.md` defines what an adapter covers and how to pick one.
+  `harness-claude-code.md` holds everything Claude Code-specific (formerly `plugin-layout.md`, plus
+  dispatch, tier mapping, tools, validation, install and session hand-off). `harness-portable.md`
+  produces an Agent Skills bundle for any other host, with worker definitions inside the director
+  skill and factory-prefixed skill names, since hosts don't namespace skills. The portable adapter is
+  general by design and untested on a specific non-Claude harness; creation journals should record
+  what it lacked, as evidence for dedicated adapters.
+- **Templates use slots.** Harness-specific text in the director, worker and learn templates became
+  `{{slot:...}}` / `{{tier:...}}` placeholders each adapter fills. `worker-agent.md` became
+  `worker.md`.
+- **factory-creator** picks the target harness in step 2 (default: the one it runs in), defers
+  layout, validation, install and session hand-off to the adapter, and records the harness in the
+  creation journal. **factory-creator-learn** points at the new source path, looks for adapter gaps
+  and harness details leaking into the neutral files, and validates with both Claude Code and the
+  Agent Skills rules.

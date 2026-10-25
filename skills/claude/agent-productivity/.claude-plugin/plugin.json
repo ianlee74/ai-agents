@@ -1,9 +1,0 @@
-{
-  "name": "agent-productivity",
-  "description": "Skills that build other skills. Includes factory-creator, which turns a desired outcome into a shareable, self-improving plugin built on the director pattern, and factory-creator-learn, which improves factory-creator from experience.",
-  "version": "0.2.0",
-  "author": {
-    "name": "Ian Lee"
-  },
-  "keywords": ["skills", "plugins", "director", "subagents", "orchestration"]
-}

@@ -1,5 +1,5 @@
 ---
-name: learn
+name: {{learn-skill-name: `learn` or `<factory>-learn`, per the adapter's Names section}}
 description: {{Improve the {{factory}} factory from experience. Reviews the run journals and interactions from past {{factory}} jobs, then proposes and (with approval) applies changes: new worker types, merged or retired workers, retuned model tiers, sharper briefs, intake questions, and quality bar. Use when the user says "learn", "improve the factory", "what should the {{factory}} factory do better", "retune the workers", or when the {{factory}} director suggests it.}}
 ---
 
@@ -13,12 +13,12 @@ You speak as the factory's director, so begin every message to the user with ðŸŽ
 
 ## 1. Find the factory's source
 
-Edit the factory's **source**, never the installed copy under `~/.claude/plugins/` (plugin updates
-overwrite that, so edits there are lost).
+Edit the factory's **source**, never the installed copy in {{slot:installed-copy}} (updates overwrite
+that, so edits there are lost).
 
-The source is the `{{plugin-name}}` plugin at `{{plugin-source-path}}` in {{repo, e.g. the
-owner/repo GitHub repository}}. If the current working directory is a checkout of that repository, use
-it. Otherwise ask the user for the path to their local clone. If they don't have one, you can still do
+The source is the {{factory}} factory at `{{factory-source-path}}` in {{repo, e.g. the owner/repo
+GitHub repository}}. If the current working directory is a checkout of that repository, use it.
+Otherwise ask the user for the path to their local clone. If they don't have one, you can still do
 the analysis and hand them the proposed changes.
 
 ## 2. Gather the evidence
@@ -27,11 +27,12 @@ the analysis and hand them the proposed changes.
   the user points you to). `.factory/learned.md` lists the runs already reviewed; focus on newer ones,
   but use older ones to confirm patterns.
 - **This conversation**: anything the user said about the factory here.
-- **Current factory**: read the director skill, every agent in `agents/`, every worker skill, and
-  `LEARNINGS.md` (past changes and why they were made, so you don't undo a deliberate decision).
+- **Current factory**: read the director skill, every worker definition ({{slot:worker-files}}),
+  every worker skill, and `LEARNINGS.md` (past changes and why they were made, so you don't undo a
+  deliberate decision).
 
-If there are many journals, dispatch a `haiku` subagent to digest them into a list of per-run facts
-(request, plan, dispatch outcomes, gaps, user signals) and work from that.
+If there are many journals, have a `{{tier:small}}` worker or subagent digest them into a list of
+per-run facts (request, plan, dispatch outcomes, gaps, user signals) and work from that.
 
 If there are fewer than two or three runs, say so: there may be too little evidence for structural
 changes, but clear user preferences and obvious fixes are still worth making.
@@ -39,7 +40,8 @@ changes, but clear user preferences and obvious fixes are still worth making.
 ## 3. Analyse
 
 Look for patterns, not one-offs. A single bad run is an anecdote; the same problem in several runs is a
-signal. Check each of these:
+signal. Gaps the journals put down to the harness (no background workers, no model choice) are limits
+to work around, not design flaws. Check each of these:
 
 | Look for | Evidence | Typical change |
 | --- | --- | --- |
@@ -52,7 +54,7 @@ signal. Check each of these:
 | **Repeated questions** | the user answers the same intake question every run | make it a default, or infer it |
 | **Stated preferences** | the user corrected style, format, or approach | write it into the quality bar and the relevant worker prompts |
 | **Slow pipeline** | dependent steps that could run in parallel, or steps that add little | reorder or cut |
-| **Missing tools** | workers lacked a tool they needed, or have tools they never use | adjust the agent's `tools:` |
+| **Missing tools** | workers lacked a tool they needed, or have tools they never use | adjust the worker's tools |
 {{Rows for this factory's own learning signals, from the design (e.g. for a writing factory, "Voice drift | the user rewrites prose for voice, run after run | fold the corrections into the voice guide"). Same three columns. Delete this line if there are none.}}
 
 ## 4. Propose
@@ -69,25 +71,18 @@ Ask the user which changes to apply. Don't change anything before they approve.
 
 For the approved changes:
 
-1. Edit the director skill, agents, and worker skills in the source. A new worker gets a new
-   `agents/<worker-name>.md` written the same way as the existing ones, and a row in the director's
-   worker table. Retiring a worker removes both.
-2. Bump the version in `.claude-plugin/plugin.json` and in the plugin's entry in the marketplace's
-   `marketplace.json`, keeping them equal: minor for added or removed workers, patch for prompt and
-   tier tweaks.
-3. Append an entry to `LEARNINGS.md` at the plugin root: the date, the new version, each change, and
+1. Edit the director skill, worker definitions, and worker skills in the source. A new worker gets a
+   new definition written the same way as the existing ones, and a row in the director's worker
+   table. Retiring a worker removes both.
+2. Bump the version in {{slot:version-files}}, keeping them equal: minor for added or removed
+   workers, patch for prompt and tier tweaks.
+3. Append an entry to `LEARNINGS.md` at the factory root: the date, the new version, each change, and
    the evidence behind it.
 4. Append the reviewed run ids to `.factory/learned.md` in the project.
-5. Validate: `claude plugin validate <plugin-path>` and `claude plugin validate <marketplace-root>`.
-   Fix any errors.
+5. Validate: {{slot:validate}}. Fix any errors.
 
 ## 6. Report
 
-Tell the user what changed and how to pick it up:
+Tell the user what changed and how to pick it up: {{slot:update}}.
 
-```bash
-claude plugin marketplace update {{marketplace-name}}
-claude plugin update {{plugin-name}}@{{marketplace-name}}
-```
-
-Then restart Claude Code. Offer to commit the changes; don't commit or push unless asked.
+Offer to commit the changes; don't commit or push unless asked.
