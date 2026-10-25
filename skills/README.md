@@ -15,7 +15,19 @@ This directory holds reusable AI agent skills intended to be packaged as marketp
 skills/
 ├── claude/
 │   ├── README.md
+│   ├── agent-productivity/      # plugin: factory-creator
+│   │   ├── .claude-plugin/plugin.json
+│   │   └── skills/
 │   └── templates/
 │       └── README.md
 └── README.md
 ```
+
+## Marketplace
+
+Plugins are listed in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) at the
+repo root (marketplace name `ianlee74-ai-agents`):
+
+| Plugin | Contents |
+| --- | --- |
+| [agent-productivity](claude/agent-productivity/README.md) | `factory-creator`: builds director-pattern plugins for a desired outcome; `factory-creator-learn`: improves factory-creator from experience |
