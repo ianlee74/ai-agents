@@ -29,6 +29,13 @@ skills/
 │   └── skills/
 │       ├── factory-creator/
 │       └── factory-creator-learn/
+├── sdlc/                        # bundle: ship
+│   ├── .claude-plugin/plugin.json
+│   ├── README.md
+│   └── skills/
+│       └── ship/
+│           ├── SKILL.md
+│           └── scripts/
 ├── claude/                      # Claude Code-only skills
 │   ├── README.md
 │   └── templates/
@@ -41,6 +48,7 @@ skills/
 | Bundle | Contents |
 | --- | --- |
 | [agent-productivity](agent-productivity/README.md) | `factory-creator`: builds director-pattern factories for a desired outcome, on any harness; `factory-creator-learn`: improves factory-creator from experience |
+| [sdlc](sdlc/README.md) | `ship`: commit, PR, merge, clean up the branch and worktree, and archive the session |
 
 For Claude Code, the bundles are listed in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json)
 at the repo root (marketplace name `ianlee74-ai-agents`). For other harnesses, see each bundle's README.
