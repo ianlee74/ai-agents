@@ -1,0 +1,17 @@
+{
+  "name": "sdlc",
+  "description": "Skills for the software development lifecycle. Includes ship, which closes out a coding session: commit, push, open a PR, merge, clean up the branch and worktree, and archive the session, without ever pushing new work onto an already-merged PR.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Ian Lee"
+  },
+  "keywords": [
+    "git",
+    "github",
+    "pull-request",
+    "merge",
+    "worktree"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/ianlee74/ai-agents"
+}

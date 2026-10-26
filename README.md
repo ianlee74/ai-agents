@@ -13,6 +13,8 @@ notes.
 - [agent-productivity](skills/agent-productivity/README.md): `factory-creator` builds self-improving
   "factories" (a director that delegates to workers at tuned model tiers) for any outcome you
   describe; `factory-creator-learn` improves factory-creator from experience.
+- [sdlc](skills/sdlc/README.md): `ship` closes out a coding session: commit, PR, merge, branch and
+  worktree cleanup, and archive.
 
 Claude Code users can install everything from this repo's marketplace:
 

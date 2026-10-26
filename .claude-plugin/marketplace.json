@@ -12,6 +12,12 @@
       "source": "./skills/agent-productivity",
       "description": "Skills that build other skills, for any agent harness. Includes factory-creator, which turns a desired outcome into a shareable, self-improving set of skills built on the director pattern (with adapters for Claude Code and a portable Agent Skills bundle), and factory-creator-learn, which improves factory-creator from experience.",
       "version": "0.3.0"
+    },
+    {
+      "name": "sdlc",
+      "source": "./skills/sdlc",
+      "description": "Skills for the software development lifecycle. Includes ship, which closes out a coding session: commit, push, open a PR, merge, clean up the branch and worktree, and archive the session, without ever pushing new work onto an already-merged PR.",
+      "version": "0.1.0"
     }
   ]
 }
