@@ -180,29 +180,41 @@ announcement of what shipped, for the user to post in Discord. Skip it for clean
 archive-only runs where nothing new shipped. When archiving (§8), put it in the final summary
 *before* calling `archive_session`, since archiving ends the conversation.
 
-Write it for the project's users and followers, not reviewers:
+Write it for the project's players, users and followers, not reviewers. Brief but fun: a
+friendly patch-notes voice with a little personality, never corporate or dry.
 
 - **Base it on the shipped diff**, not just this session's memory: `git log --oneline
   origin/<default>..HEAD` (or the merged PR's commits) and the PR title/body.
-- **Format:** one bold headline line naming the project and the change, then 2–5 short bullets of
-  user-visible changes (what they can now do, what got fixed). Optional closing line with the PR
-  link. Under ~600 characters; Discord's hard limit is 2000.
-- **Discord markdown only:** `**bold**`, `-` bullets, `` `code` ``. No tables or headings beyond
-  one `#` line. Wrap links in `<...>` to suppress embeds (e.g. `<https://github.com/o/r/pull/35>`).
-  An emoji or two is fine.
-- **Plain language:** no internal file names, branch names, refactors or test details unless
-  they matter to users. Never include secrets, private repo paths or personal details.
-- Put it in its own fenced code block (`` ```md ``) so it copies cleanly. Don't post it anywhere
-  yourself; sending a message on the user's behalf needs their explicit go-ahead.
+- **Headline:** one themed emoji, then `**<Project> update: <short theme>**` (e.g. "town
+  polish", "food photos").
+- **Bullets:** `•` bullets, each starting with a bold label for the thing that changed
+  (`**Town bell:**`), then one or two concrete sentences on what's different *as the user sees
+  it*. Before → after works well ("now tapers to a point instead of ending in a club"). Group
+  small related fixes into one bullet; aim for 2–6 bullets.
+- **Fun:** a light joke, a wry aside, or a nod to a character/user in parentheses is welcome
+  where it fits naturally ("Sela says thanks"). One per post is plenty; don't force it.
+- **Sign-off:** end with one short line telling people what to do or expect, plus a themed
+  emoji ("Your game updates automatically. See you in the harbor! ⚓").
+- **Length:** keep it short enough to read at a glance, about 1000 characters at most (Discord's
+  hard limit is 2000).
+- **Discord markdown only:** `**bold**`, `•` or `-` bullets, `` `code` ``. No tables or
+  headings. No PR or GitHub links unless the audience is developers; if you include one, wrap it
+  in `<...>` to suppress the embed.
+- **Plain language:** no file names, branch names, refactors, test details or other internals
+  users can't see. Never include secrets, private repo paths or personal details.
+- Put it in its own fenced code block so it copies cleanly. Don't post it anywhere yourself;
+  sending a message on the user's behalf needs their explicit go-ahead.
 
 Example:
 
-````md
-```md
-**🚀 llacer: food photos now log meals**
-- Snap a plate and llacer estimates the meal's calories and protein
-- Nutrition labels are read straight into your food library
-- Fixed: water goals now reset at midnight local time
-<https://github.com/ianlee74/llacer/pull/35>
 ```
-````
+🔔 **Reckless Realms update: town polish**
+
+• **Town bell:** the bell now has a proper bell wheel. The rope runs over the wheel and hangs beside the frame instead of through the bell. Ring it and the bell swings about 30°, winding the rope as it goes.
+• **Horses & mules:** tails now taper to a point instead of ending in a club.
+• **Bows:** held bows are the right way round. The string now faces your armpit instead of your knees (Sela says thanks).
+• **Farmer Joe's plough:** the mule is actually hitched to the plough now, and Joe's lines run from the mule's bit back to his hands.
+• **Farmer Joe's bed:** turned around so the headboard is against the wall.
+
+Your game updates automatically. See you in the harbor! ⚓
+```
