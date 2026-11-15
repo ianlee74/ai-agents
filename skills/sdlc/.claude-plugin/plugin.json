@@ -1,7 +1,7 @@
 {
   "name": "sdlc",
   "description": "Skills for the software development lifecycle. Includes ship, which closes out a coding session: commit, push, open a PR, merge, clean up the branch and worktree, and archive the session, without ever pushing new work onto an already-merged PR.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Ian Lee"
   },
