@@ -160,7 +160,7 @@ list before running it for real. Those worktrees may belong to other sessions.
 
 ## 8. Archive (only if asked)
 
-Archiving ends this conversation, so send the final summary first, then call
+Archiving ends this conversation, so send the final summary (with the §9 Discord post) first, then call
 `mcp__ccd_session_mgmt__archive_session` with `session_id: "self"` and a reason like
 `"PR #35 merged"` as the last action of the turn. If the tool isn't available, say the
 session is ready to archive.
@@ -172,3 +172,37 @@ Claude Code) archives sessions automatically when their PR merges.
 
 Keep it short: commit(s), PR link (and whether it's new or existing, and why if the work moved),
 merge result, what cleanup removed and what it kept and why, and anything the user needs to do.
+
+## 9. Discord post (always, last)
+
+Whenever this run committed, opened or merged something, end the summary with a ready-to-paste
+announcement of what shipped, for the user to post in Discord. Skip it for cleanup-only or
+archive-only runs where nothing new shipped. When archiving (§8), put it in the final summary
+*before* calling `archive_session`, since archiving ends the conversation.
+
+Write it for the project's users and followers, not reviewers:
+
+- **Base it on the shipped diff**, not just this session's memory: `git log --oneline
+  origin/<default>..HEAD` (or the merged PR's commits) and the PR title/body.
+- **Format:** one bold headline line naming the project and the change, then 2–5 short bullets of
+  user-visible changes (what they can now do, what got fixed). Optional closing line with the PR
+  link. Under ~600 characters; Discord's hard limit is 2000.
+- **Discord markdown only:** `**bold**`, `-` bullets, `` `code` ``. No tables or headings beyond
+  one `#` line. Wrap links in `<...>` to suppress embeds (e.g. `<https://github.com/o/r/pull/35>`).
+  An emoji or two is fine.
+- **Plain language:** no internal file names, branch names, refactors or test details unless
+  they matter to users. Never include secrets, private repo paths or personal details.
+- Put it in its own fenced code block (`` ```md ``) so it copies cleanly. Don't post it anywhere
+  yourself; sending a message on the user's behalf needs their explicit go-ahead.
+
+Example:
+
+````md
+```md
+**🚀 llacer: food photos now log meals**
+- Snap a plate and llacer estimates the meal's calories and protein
+- Nutrition labels are read straight into your food library
+- Fixed: water goals now reset at midnight local time
+<https://github.com/ianlee74/llacer/pull/35>
+```
+````
