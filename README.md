@@ -15,6 +15,8 @@ notes.
   describe; `factory-creator-learn` improves factory-creator from experience.
 - [sdlc](skills/sdlc/README.md): `ship` closes out a coding session: commit, PR, merge, branch and
   worktree cleanup, and archive.
+- [reckless-realms](skills/reckless-realms/README.md): `test` starts a local Reckless Realms test
+  game from the session's checkout with the client dev bridge connected.
 
 Claude Code users can install everything from this repo's marketplace:
 

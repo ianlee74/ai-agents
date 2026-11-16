@@ -36,6 +36,11 @@ skills/
 │       └── ship/
 │           ├── SKILL.md
 │           └── scripts/
+├── reckless-realms/             # bundle: test
+│   ├── .claude-plugin/plugin.json
+│   ├── README.md
+│   └── skills/
+│       └── test/
 ├── claude/                      # Claude Code-only skills
 │   ├── README.md
 │   └── templates/
@@ -49,6 +54,7 @@ skills/
 | --- | --- |
 | [agent-productivity](agent-productivity/README.md) | `factory-creator`: builds director-pattern factories for a desired outcome, on any harness; `factory-creator-learn`: improves factory-creator from experience |
 | [sdlc](sdlc/README.md) | `ship`: commit, PR, merge, clean up the branch and worktree, and archive the session |
+| [reckless-realms](reckless-realms/README.md) | `test`: start a local Reckless Realms test game with the client dev bridge connected |
 
 For Claude Code, the bundles are listed in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json)
 at the repo root (marketplace name `ianlee74-ai-agents`). For other harnesses, see each bundle's README.

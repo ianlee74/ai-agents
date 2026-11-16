@@ -1,0 +1,17 @@
+{
+  "name": "reckless-realms",
+  "description": "Skills for developing the Reckless Realms game. Includes test, which starts a local test game from the current session's reckless-realms checkout with the client dev bridge enabled and connects to the bridge.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Ian Lee"
+  },
+  "keywords": [
+    "reckless-realms",
+    "godot",
+    "game-dev",
+    "dev-bridge",
+    "playtest"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/ianlee74/ai-agents"
+}
