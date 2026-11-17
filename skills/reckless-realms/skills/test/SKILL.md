@@ -55,13 +55,19 @@ Create `GAME/ai-work/test-game/` and start the game as a **background** command 
 stopped), logging to a file:
 
 ```bash
-RR_DEV_BRIDGE=1 npm run play -- --content-offline --fixtures --clients 1 --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
+RR_DEV_BRIDGE=1 RR_ADMIN_PLAYER_ID=development:player-1 npm run play -- --content-offline --fixtures --clients 1 --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
 ```
 
-PowerShell form: `$env:RR_DEV_BRIDGE='1'; npm run play -- ...` with the same arguments.
+PowerShell form: `$env:RR_DEV_BRIDGE='1'; $env:RR_ADMIN_PLAYER_ID='development:player-1'; npm run play -- ...`
+with the same arguments.
 
 - `RR_DEV_BRIDGE=1` turns the bridge on for this client only (no `dev-bridge.cfg` change, so the
   installed release is unaffected).
+- `RR_ADMIN_PLAYER_ID=development:player-1` makes the dev test user an admin. Set it on the launch
+  command only, so it applies to this game and not to other games or the installed release. Don't
+  set it machine- or user-wide (`[Environment]::SetEnvironmentVariable(..., 'User')`) unless the
+  user asks. In the named-character flow (no `--fixtures`) the player id isn't
+  `development:player-1`, so leave it off there unless the user gives the id to promote.
 - `--fixtures --clients 1` signs the client in as the **dev test user** (development fixture
   `player-1`, the character Aster), which goes straight into the world: no character creation.
   This is the default. Only when the user asks for the normal named-character flow (character
