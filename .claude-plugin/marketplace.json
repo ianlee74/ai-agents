@@ -17,7 +17,7 @@
       "name": "sdlc",
       "source": "./skills/sdlc",
       "description": "Skills for the software development lifecycle. Includes ship, which closes out a coding session: commit, push, open a PR, merge, clean up the branch and worktree, and archive the session, without ever pushing new work onto an already-merged PR.",
-      "version": "0.2.1"
+      "version": "0.3.0"
     },
     {
       "name": "reckless-realms",

@@ -19,6 +19,8 @@ it lives in the plugin cache, not `~/.claude/skills/`.
 - `pr-state.ps1`: prints JSON with the branch's PRs and a `verdict`. `-NewBranch <name>` moves
   the work off a finished PR. Read-only without `-NewBranch`.
 - `post-merge-cleanup.ps1`: branch and worktree hygiene after a merge. `-DryRun` shows the plan.
+- `purge-session-files.ps1`: deletes the session's `ai-work/` and temp folder before cleanup or
+  archive, and (with `-DiscardChanges`) its uncommitted changes. `-DryRun` shows sizes.
 
 The desktop app's tools are deferred. Load the ones the scope needs in one call, e.g.
 `ToolSearch select:mcp__ccd_host__sync_with_base_branch,mcp__ccd_pr__get_status,mcp__ccd_pr__bind_pr,mcp__ccd_session_mgmt__archive_session`
@@ -154,11 +156,29 @@ branch it:
 Relay what it kept and why: a dirty main checkout, a worktree with uncommitted changes,
 unmerged local commits. Those are what the user needs to act on. Don't force past them.
 
+Then delete the session's temporary files with `purge-session-files.ps1 -Scratchpad <this
+session's scratchpad path>` run from the same worktree. It deletes the worktree's `ai-work/`
+(test builds, staged clients and other generated files pile up there: tens of GB per session
+in game repos) and the session's temp folder. In the main checkout `ai-work/` is shared with
+other sessions, so it is kept unless the user asks; then add `-IncludeMainCheckout`, which only
+prunes entries older than a day. Relay what it deleted and its size.
+
 `-AllMerged` sweeps every local branch. Use it only when the user asks for a broad cleanup
 ("clean up all the old branches"), and always run it with `-DryRun` first and show the user the
 list before running it for real. Those worktrees may belong to other sessions.
 
 ## 8. Archive (only if asked)
+
+An archived session should leave nothing on disk but its conversation. The app deletes the
+session's worktree on archive only when it is clean, so first:
+
+1. Run `purge-session-files.ps1 -Scratchpad <scratchpad path>` (if §7 didn't just run it). It
+   deletes `ai-work/` and the session temp folder and reports uncommitted changes and unpushed
+   commits.
+2. If it reports uncommitted changes or unpushed commits, show them and ask whether to discard
+   them. Never discard without a yes. On a yes, rerun it with `-DiscardChanges` so the worktree
+   is clean and the app removes it. On a no, archive anyway and say the worktree stays on disk
+   until those changes are committed or discarded (the app's Settings › Storage lists it).
 
 Archiving ends this conversation, so send the final summary (with the §9 Discord post) first, then call
 `mcp__ccd_session_mgmt__archive_session` with `session_id: "self"` and a reason like
