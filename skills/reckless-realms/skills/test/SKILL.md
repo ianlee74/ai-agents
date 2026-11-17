@@ -55,13 +55,18 @@ Create `GAME/ai-work/test-game/` and start the game as a **background** command 
 stopped), logging to a file:
 
 ```bash
-RR_DEV_BRIDGE=1 npm run play -- --content-offline --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
+RR_DEV_BRIDGE=1 npm run play -- --content-offline --fixtures --clients 1 --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
 ```
 
 PowerShell form: `$env:RR_DEV_BRIDGE='1'; npm run play -- ...` with the same arguments.
 
 - `RR_DEV_BRIDGE=1` turns the bridge on for this client only (no `dev-bridge.cfg` change, so the
   installed release is unaffected).
+- `--fixtures --clients 1` signs the client in as the **dev test user** (development fixture
+  `player-1`, the character Aster), which goes straight into the world: no character creation.
+  This is the default. Only when the user asks for the normal named-character flow (character
+  creator, roster, anonymous identity) drop both flags. Use `--fixtures` without `--clients 1`
+  (two clients, Aster and Bram) only when the user asks for a second player.
 - `--content-offline` reuses the last prepared content. If it exits with `ENOENT` on
   `ai-work/content-source/current.json`, nothing has been prepared yet: relaunch without
   `--content-offline` (it then resolves content `main` first, which takes longer).
@@ -76,8 +81,6 @@ PowerShell form: `$env:RR_DEV_BRIDGE='1'; npm run play -- ...` with the same arg
   you pinned.
 - `--no-companion` skips the phone companion and its TLS setup. Drop it only if the user wants the
   companion.
-- Add `--fixtures` only when the user asks for the two-client development-fixture scene instead of
-  the normal named-character flow.
 
 ## 5. Connect the dev bridge
 
@@ -99,8 +102,10 @@ startup is harmless.
 Then run `node tools/dev-bridge.mjs ping --pid <pid>`. Always pass `--pid` for this client in every
 later bridge command, since the default (newest session) may belong to another game.
 
-`joined` is `false` until a character enters the world. That's expected: in the default flow the
-user creates or picks a character in the client window first.
+With the dev test user there's no character screen, so `joined` should turn `true` on its own
+once the client has loaded the world; if it's still `false`, wait a few seconds and ping again
+before reporting a problem. In the named-character flow `joined`
+stays `false` until the user creates or picks a character in the client window.
 
 ## 6. Label the window with the session name
 
@@ -152,8 +157,10 @@ Tell the user, briefly:
 - the window label (or why it couldn't be set);
 - the log path (`GAME/ai-work/test-game/play.log`) and that the game keeps running in the
   background;
-- what to do next: create/enter a character in the client window; you can then use
-  `screenshot`, `tree`, `inspect`, `eval`, `install` and `drive` (see `GAME/docs/Dev-Bridge.md`).
+- who's playing (the dev test user, Aster, unless the user asked for the named-character flow, in
+  which case they create/enter a character in the client window first);
+- what you can do next: `screenshot`, `tree`, `inspect`, `eval`, `install` and `drive` (see
+  `GAME/docs/Dev-Bridge.md`).
 
 ## Stopping
 
