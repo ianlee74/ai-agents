@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Ship the current change: commit, push, open a PR, and optionally merge it, clean up the branch and worktree, and archive the session. Use whenever the user says 'PR it', 'commit and PR', 'open a PR then merge', 'PR and merge', 'merge it', 'clean up and archive', 'ship it', 'merged. clean up', or any combination of commit/PR/merge/cleanup/archive, even without the word 'ship'. Also use when the user says a PR was already merged or completed and the new change needs its own PR, or asks to resolve merge conflicts on a PR before merging."
+description: "Ship the current change: commit, push, open a PR, and optionally merge it, clean up the branch and worktree, and archive the session. Use it instead of running the commit, PR and merge steps by hand, even when the user's 'ship it' (or similar) approves a plan already agreed in the conversation. Whenever something was committed, opened or merged, it ends with a ready-to-paste Discord post. Use whenever the user says 'PR it', 'commit and PR', 'open a PR then merge', 'PR and merge', 'merge it', 'clean up and archive', 'ship it', 'merged. clean up', or any combination of commit/PR/merge/cleanup/archive, even without the word 'ship'. Also use when the user says a PR was already merged or completed and the new change needs its own PR, or asks to resolve merge conflicts on a PR before merging."
 ---
 
 # Ship
