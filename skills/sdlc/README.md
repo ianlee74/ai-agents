@@ -6,6 +6,13 @@ plugin.
 
 ## Skills
 
+### implement-issue
+
+Works a GitHub issue from number to finished change ("implement 123", "work on ticket 123"): finds
+and claims it, renames the session to `#123: title`, investigates and proposes a solution, then
+stops for approval. Once approved it pulls in the latest default branch, rechecks anything that
+affects, builds, and stops again to ask whether you want to test it or PR it (through `ship`).
+
 ### ship
 
 The closing routine for a coding session: commit → PR → merge → clean up → archive. Ask for any
@@ -46,5 +53,5 @@ say "PR it" or run `/sdlc:ship`.
 
 ### Other harnesses
 
-Copy or symlink `skills/ship/` into the directory your harness loads Agent Skills from (see its
-documentation), keeping its `scripts/` folder alongside `SKILL.md`.
+Copy or symlink `skills/implement-issue/` and `skills/ship/` into the directory your harness loads Agent Skills from (see its
+documentation), keeping each skill's `scripts/` or `references/` folder alongside its `SKILL.md`.
