@@ -12,9 +12,9 @@ Say "start a test game" or "start a local test". From the session's own reckless
 (main or a worktree) it:
 
 - launches `npm run play` in the background on an isolated `test-<name>` save and a free port, with
-  `RR_DEV_BRIDGE=1` so only this client runs the [dev bridge](https://github.com/Reckless-Software/reckless-realms/blob/main/docs/Dev-Bridge.md),
-  and `RR_ADMIN_PLAYER_ID=development:player-1` so the dev test user is an admin;
+  `RR_DEV_BRIDGE=1` so only this client runs the [dev bridge](https://github.com/Reckless-Software/reckless-realms/blob/main/docs/Dev-Bridge.md);
 - waits for the join code and the new bridge session, then `ping`s it;
+- creates a new admin character populated for the test with `tools/create-character.mjs`;
 - labels the client window `[<session name>] Reckless Realms — <character>` through a small bridge
   install, so you can tell test games apart;
 - reports the save, port, join code, bridge pid and log path, and leaves the game running.

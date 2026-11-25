@@ -8,7 +8,7 @@
 - **Working directory:** in the desktop app the session usually runs in a worktree under
   `<game>/.claude/worktrees/<name>`. That worktree is the game checkout to launch; its `ai-work/`
   (saves, staged client, bridge session files) is separate from the main checkout's.
-- **Session name (step 6):** in the desktop app, load `mcp__ccd_session_mgmt__get_session` with
+- **Session name (step 7):** in the desktop app, load `mcp__ccd_session_mgmt__get_session` with
   ToolSearch and call it with `session_id: "self"`. Its `title` is the label. In a plain CLI
   session there is no title, so use the step 3 short name.
 - **Git Bash paths:** set `MSYS_NO_PATHCONV=1` for bridge commands whose node path starts with `/`
