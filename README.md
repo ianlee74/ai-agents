@@ -13,7 +13,7 @@ notes.
 - [agent-productivity](skills/agent-productivity/README.md): `factory-creator` builds self-improving
   "factories" (a director that delegates to workers at tuned model tiers) for any outcome you
   describe; `factory-creator-learn` improves factory-creator from experience.
-- [sdlc](skills/sdlc/README.md): `ship` closes out a coding session: commit, PR, merge, branch and
+- [sdlc](skills/sdlc/README.md): `implement-issue` works a GitHub issue from claim to finished change; `ship` closes out a coding session: commit, PR, merge, branch and
   worktree cleanup, and archive.
 - [reckless-realms](skills/reckless-realms/README.md): `test` starts a local Reckless Realms test
   game from the session's checkout with the client dev bridge connected.

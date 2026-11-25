@@ -29,10 +29,11 @@ skills/
 │   └── skills/
 │       ├── factory-creator/
 │       └── factory-creator-learn/
-├── sdlc/                        # bundle: ship
+├── sdlc/                        # bundle: implement-issue, ship
 │   ├── .claude-plugin/plugin.json
 │   ├── README.md
 │   └── skills/
+│       ├── implement-issue/
 │       └── ship/
 │           ├── SKILL.md
 │           └── scripts/
@@ -53,7 +54,7 @@ skills/
 | Bundle | Contents |
 | --- | --- |
 | [agent-productivity](agent-productivity/README.md) | `factory-creator`: builds director-pattern factories for a desired outcome, on any harness; `factory-creator-learn`: improves factory-creator from experience |
-| [sdlc](sdlc/README.md) | `ship`: commit, PR, merge, clean up the branch and worktree, and archive the session |
+| [sdlc](sdlc/README.md) | `implement-issue`: work a GitHub issue from claim to finished change, with approval stops; `ship`: commit, PR, merge, clean up the branch and worktree, and archive the session |
 | [reckless-realms](reckless-realms/README.md) | `test`: start a local Reckless Realms test game with the client dev bridge connected |
 
 For Claude Code, the bundles are listed in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json)
