@@ -1,13 +1,13 @@
 ---
 name: test
-description: "Start a local Reckless Realms test game from the current session's reckless-realms checkout (worktree or main) with the client dev bridge enabled, then connect to the bridge and confirm it answers. Use whenever the user says 'start a test game', 'start a local test', 'launch a test game', 'spin up a local game', 'play-test this', or asks to try the current change in a running game client, even without naming the dev bridge."
+description: "Start a local Reckless Realms test game from the current session's reckless-realms checkout (worktree or main) with the client dev bridge enabled, connect to the bridge, and create and populate a new test character. Use whenever the user says 'start a test game', 'start a local test', 'launch a test game', 'spin up a local game', 'play-test this', or asks to try the current change in a running game client, even without naming the dev bridge."
 ---
 
 # Start a local test game
 
 Launches this session's Reckless Realms game (local server cluster plus one client) on an isolated
-test save, with the client dev bridge on, and leaves it running so the user can play and you can
-drive, inspect and screenshot the client through `node tools/dev-bridge.mjs`.
+test save, with the client dev bridge on, creates a new character for the test, and
+leaves it running so the user can play and you can drive, inspect and screenshot the client through `node tools/dev-bridge.mjs`.
 
 Harness-specific details (how to run a long-lived background command and wait on a condition) are
 in [references/harness-claude-code.md](references/harness-claude-code.md). Read it when running in
@@ -21,6 +21,9 @@ Use the checkout this session works in, never a different worktree:
   (`git rev-parse --show-toplevel`).
 - It is the game if its `package.json` has `"name": "reckless-realms"` and it has
   `tools/play.mjs` and `tools/dev-bridge.mjs`.
+- It must also have `tools/create-character.mjs`. If it doesn't, the checkout predates that tool: ask
+  the user whether to update it or to create the character by hand in the client window. Never play
+  the built-in characters (Aster, Bram).
 - If the session is in `reckless-realms-content` or anywhere else, stop and ask the user which game
   checkout to use (the main one is usually `C:\Code\Reckless-Software\reckless-realms`). Don't
   guess a worktree.
@@ -29,13 +32,15 @@ Run every later command from that checkout. Call it `GAME` below.
 
 ## 2. Check what's already running
 
-From `GAME`, run `node tools/dev-bridge.mjs status` and note every listed `pid`. This also lists
-clients from the installed release and from other checkouts' staged runs, so keep the list: your
-client is the one that appears *after* launch.
+From `GAME`, run `node tools/dev-bridge.mjs status` and note every listed `pid` and its session file
+path. It also lists clients from the installed release, which may be the user's live game. Only the
+sessions whose file is under this checkout's `GAME/ai-work/` are yours to use; never drive any other.
 
-If a client started from this same checkout is already live (its session file is under
-`GAME/ai-work/`), ask the user whether to reuse it or start a fresh one; on "reuse", skip to step 5
-with that pid.
+If a client under `GAME/ai-work/` is already live, ask the user whether to reuse it or start a fresh
+one. On "reuse", skip to step 5 with that pid. `create-character` refuses a client that is already
+in the world, so a new character needs one at the character screen: if it is already in, either
+keep its character with the user's agreement (it must not be Aster or Bram) and skip step 6, or stop
+it and start fresh.
 
 ## 3. Pick the save and port
 
@@ -55,24 +60,15 @@ Create `GAME/ai-work/test-game/` and start the game as a **background** command 
 stopped), logging to a file:
 
 ```bash
-RR_DEV_BRIDGE=1 RR_ADMIN_PLAYER_ID=development:player-1 npm run play -- --content-offline --fixtures --clients 1 --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
+RR_DEV_BRIDGE=1 npm run play -- --content-offline --save <save> --no-companion --port <port> > ai-work/test-game/play.log 2>&1
 ```
 
-PowerShell form: `$env:RR_DEV_BRIDGE='1'; $env:RR_ADMIN_PLAYER_ID='development:player-1'; npm run play -- ...`
-with the same arguments.
+PowerShell form: `$env:RR_DEV_BRIDGE='1'; npm run play -- ...` with the same arguments.
 
 - `RR_DEV_BRIDGE=1` turns the bridge on for this client only (no `dev-bridge.cfg` change, so the
   installed release is unaffected).
-- `RR_ADMIN_PLAYER_ID=development:player-1` makes the dev test user an admin. Set it on the launch
-  command only, so it applies to this game and not to other games or the installed release. Don't
-  set it machine- or user-wide (`[Environment]::SetEnvironmentVariable(..., 'User')`) unless the
-  user asks. In the named-character flow (no `--fixtures`) the player id isn't
-  `development:player-1`, so leave it off there unless the user gives the id to promote.
-- `--fixtures --clients 1` signs the client in as the **dev test user** (development fixture
-  `player-1`, the character Aster), which goes straight into the world: no character creation.
-  This is the default. Only when the user asks for the normal named-character flow (character
-  creator, roster, anonymous identity) drop both flags. Use `--fixtures` without `--clients 1`
-  (two clients, Aster and Bram) only when the user asks for a second player.
+- The client opens at the character screen; step 6 creates its character and makes it an admin.
+  Don't enter the world by hand first. One client starts by default.
 - `--content-offline` reuses the last prepared content. If it exits with `ENOENT` on
   `ai-work/content-source/current.json`, nothing has been prepared yet: relaunch without
   `--content-offline` (it then resolves content `main` first, which takes longer).
@@ -94,7 +90,9 @@ Wait (up to about 3 minutes; the first run in a checkout stages the client and i
 **both** hold:
 
 - `play.log` contains `Join code:`, and
-- `node tools/dev-bridge.mjs status` lists a pid that wasn't there in step 2.
+- `node tools/dev-bridge.mjs status` lists a pid that wasn't there in step 2 **and** whose session
+  file is under this checkout's `GAME/ai-work/`. Match on that path, never on "newest": another
+  game's client may have started in the meantime.
 
 Fail fast instead of waiting out the timeout if the background command exits or the log shows a
 crash (a line starting `Error` or `Node.js v`, which Node prints after an uncaught exception). Then
@@ -108,12 +106,39 @@ startup is harmless.
 Then run `node tools/dev-bridge.mjs ping --pid <pid>`. Always pass `--pid` for this client in every
 later bridge command, since the default (newest session) may belong to another game.
 
-With the dev test user there's no character screen, so `joined` should turn `true` on its own
-once the client has loaded the world; if it's still `false`, wait a few seconds and ping again
-before reporting a problem. In the named-character flow `joined`
-stays `false` until the user creates or picks a character in the client window.
+`joined` is `false` while the client is at the character screen; that is expected here.
 
-## 6. Label the window with the session name
+## 6. Create and populate a character
+
+Every test run gets a new character. Never play the built-in ones (Aster, Bram). From `GAME`:
+
+```bash
+node tools/create-character.mjs --pid <pid> --admin [--name <name>] [--background <id>] [--attributes vigor=6,reason=3] [--run "<chat command>"]...
+```
+
+- Choose the parameters for what this test exercises: for example
+  `--run "time set 18:00" --run "teleport harbor" --run "give fishing_pole"`. Anything left out gets
+  a valid default (a unique name, the first background, the creation points spread out). If the
+  user only wants to play, `--pid <pid> --admin` is enough.
+- `--admin` makes the character an administrator with `adminPassword` from this checkout's
+  `game-settings.json`. It doesn't print the password; don't print it or pass it yourself (a
+  `--run "/admin …"` is refused).
+- `--run` is repeatable and runs in order. Leave off the leading `/`, which Git Bash rewrites.
+- Longer setups: pass a JSON `--file` with the same keys, kept under `GAME/ai-work/`. `--help` lists
+  everything.
+- The tool waits for the character screen itself and returns once the character is in the world. It
+  exits 1 at the first refusal. If creation was refused, fix the parameters and run it again. If a
+  `--run` command was refused, the character is already in the world and the later commands did not
+  run: report it (don't rerun the tool on that client, it would be refused).
+- A save holds at most 10 characters for this client. If creation is refused because the roster is
+  full, relaunch on a new save name; don't wipe or delete characters.
+- If the user asks to create or pick the character themselves, skip this step and wait until `ping`
+  reports `joined: true`.
+
+Afterwards, `ping --pid <pid>` should report `joined: true`. See "Test characters" in
+`GAME/docs/Dev-Bridge.md`.
+
+## 7. Label the window with the session name
 
 So the user can tell test games apart, prefix the client's window title with this session's name.
 
@@ -154,7 +179,7 @@ To read the real title, ask Windows rather than Godot, which has no title getter
 label is a convenience, so a failure here doesn't stop the test game. `reset` removes the install,
 so after a `reset` run the same `install` again to restore the label.
 
-## 7. Report
+## 8. Report
 
 Tell the user, briefly:
 
@@ -163,8 +188,7 @@ Tell the user, briefly:
 - the window label (or why it couldn't be set);
 - the log path (`GAME/ai-work/test-game/play.log`) and that the game keeps running in the
   background;
-- who's playing (the dev test user, Aster, unless the user asked for the named-character flow, in
-  which case they create/enter a character in the client window first);
+- the new character's name, that it is an admin, and the setup commands that ran or were refused;
 - what you can do next: `screenshot`, `tree`, `inspect`, `eval`, `install` and `drive` (see
   `GAME/docs/Dev-Bridge.md`).
 
@@ -172,7 +196,7 @@ Tell the user, briefly:
 
 Closing the client window does **not** stop the game: the server and its services keep running
 with the character left in the world. To restart after the user closes it, stop the game, then go
-through steps 4–6 again on the same save and port.
+through steps 4–7 again on the same save and port, with a new character.
 
 To stop it, stop the background command. On Windows that can leave the whole game tree running,
 because Git Bash doesn't pass Ctrl+C on to it. If the port is still listening afterwards, find the
