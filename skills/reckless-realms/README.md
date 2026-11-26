@@ -25,7 +25,7 @@ sessions' games. Requires the game repo's own setup (`npm run setup`).
 ### triage
 
 Say "start triage" or run `/reckless-realms:triage` in a Claude desktop session. As a supervisor
-it polls `reckless-realms` and `reckless-realms-content` (every 15 minutes by default) for open
+it polls `reckless-realms` and `reckless-realms-content` (every 5 minutes by default, and again as soon as a worker finishes) for open
 tickets labelled `needs-triage`, and starts one worker session per ticket (up to 3 at a time),
 oldest tickets first.
 Each worker:

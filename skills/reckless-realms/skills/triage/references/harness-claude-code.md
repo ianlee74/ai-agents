@@ -5,12 +5,19 @@ These need the Claude desktop app (Code tab). Most tools are deferred: load them
 
 ## Supervisor
 
-- **Timer (S2 step 5):** at setup, create an in-session recurring check-in with `CronCreate`
-  (every 15 minutes, or the user's cadence) whose prompt is `/reckless-realms:triage`, or, without
-  `CronCreate`, run the supervisor under `/loop 15m /reckless-realms:triage`. A worker finishing
-  also wakes the supervisor through a side-sessions event; run a cycle then too. To stop, delete
-  the cron job (`CronDelete`) or end the loop.
-- **Starting workers (S2 step 3):** `mcp__ccd_session__start_session` with
+- **Timer (S2 step 6):** at setup, create an in-session recurring check-in with `CronCreate`
+  (every 5 minutes, or the user's cadence) whose prompt is `/reckless-realms:triage`. Use an
+  off-minute cron such as `2-59/5 * * * *` rather than `*/5`. Without `CronCreate`, run the
+  supervisor under `/loop 5m /reckless-realms:triage`. To stop, delete the cron job
+  (`CronDelete`) or end the loop.
+- **Cycle triggers (S2):** a worker that ends its own turn wakes the supervisor with a
+  `<side-sessions-event>` message; run a full cycle on it and refill the slot then. A worker the
+  **user archived** sends no side-sessions note, so the supervisor only learns of it on its next
+  turn: the 5-minute timer is the backstop for that case. Any user message is a cycle trigger too.
+- **Finished or not (S2 step 2):** go by GitHub, not by `list_sessions` state. An archived
+  session may have finished its ticket or abandoned it; a running one may already have released
+  its claim and be about to archive.
+- **Starting workers (S2 step 4):** `mcp__ccd_session__start_session` with
   `initiation: "user_asked"` (the user asked for the supervisor to start them), `context: "fresh"`,
   `use_worktree: true`, `title: "#<N>: <title>"`, `prompt` = the brief, and `background` naming the
   ticket URL, the repo and that this is an unattended triage worker. Keep each returned session id
