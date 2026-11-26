@@ -39,6 +39,7 @@ isn't listed at all (e.g. a plain CLI session), use the git/gh fallback given in
 | "…with auto-merge" / "…and auto-fix" | open PR, then turn on the app switch instead of merging now (see §6) |
 | "clean up", "merged. clean up" | cleanup only (§7); the PR is already merged |
 | "…and archive", "archive this session when complete" | finish everything else, then archive (§8) |
+| "…and post to Discord", "post the announcement" | also post the §9 announcement with `post-discord.ps1` |
 
 If the scope is truly unclear (e.g. just "done?"), ask. Otherwise go.
 
@@ -243,13 +244,17 @@ Your game updates automatically. See you in the harbor! ⚓
 **Posting it (only when asked).** Post it yourself only when the user asked in this
 conversation to send or post the Discord message ("ship it and post to Discord", "post the
 announcement"). That request is the go-ahead for this one post; it doesn't carry over to later
-runs. Otherwise just show the block. To post:
+runs. Otherwise just show the block. When archiving, post before calling `archive_session`. To post:
 
-1. Write the post to a UTF-8 file in the scratchpad (e.g. `discord-post.md`).
+1. Write the post text, without the surrounding code fence, to a UTF-8 file in the scratchpad
+   (e.g. `discord-post.md`).
 2. Run `pwsh -NoProfile -File "<this skill's folder>/scripts/post-discord.ps1" -File <that
    file>`. It reads the webhook from `$env:RR_DISCORD_WEBHOOK` (pass `-WebhookEnv <name>` for
    another project's channel), disables @mentions, and rejects posts over 2000 characters.
    `-DryRun` shows what would be sent. Never read, print or ask for the webhook URL yourself.
+   The default variable is Reckless Realms' channel: use it only when Reckless Realms shipped.
+   For another project pass its variable with `-WebhookEnv`; if none is known, don't post,
+   show the block and say which variable to set.
 3. Exit 0: say it was posted (no need to repeat the text). Any other exit: relay the script's
    message and show the ready-to-paste block instead.
 
