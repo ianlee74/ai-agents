@@ -28,10 +28,15 @@ those steps, in order.
 - **Cleans up after the merge**: removes the session's worktrees, deletes the local and remote
   branch, fast-forwards the main checkout, and keeps (and reports) anything with unmerged or
   uncommitted work.
+- **Announces what shipped**: ends with a short Discord post, and posts it through a channel
+  webhook when you ask ("ship it and post to Discord"). The webhook URL stays in an environment
+  variable you set yourself (`RR_DISCORD_WEBHOOK` by default); the skill never sees it.
 
-Two PowerShell scripts in [`skills/ship/scripts/`](skills/ship/scripts/) do the git work:
-`pr-state.ps1` (the branch's PR state, and moving work off a finished PR) and
-`post-merge-cleanup.ps1` (branch and worktree hygiene; `-DryRun` shows the plan).
+PowerShell scripts in [`skills/ship/scripts/`](skills/ship/scripts/) do the error-prone work:
+`pr-state.ps1` (the branch's PR state, and moving work off a finished PR),
+`post-merge-cleanup.ps1` (branch and worktree hygiene; `-DryRun` shows the plan),
+`purge-session-files.ps1` (session temp files) and `post-discord.ps1` (the Discord post; set the
+webhook once with `[Environment]::SetEnvironmentVariable('RR_DISCORD_WEBHOOK', '<url>', 'User')`).
 
 Requires `git`, the [GitHub CLI](https://cli.github.com/) (`gh`, signed in), and PowerShell 7
 (`pwsh`). The archive, PR-binding and host-sync steps use the Claude desktop app's tools; in other
