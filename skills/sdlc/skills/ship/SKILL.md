@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Ship the current change: commit, push, open a PR, and optionally merge it, clean up the branch and worktree, and archive the session. Use it instead of running the commit, PR and merge steps by hand, even when the user's 'ship it' (or similar) approves a plan already agreed in the conversation. Whenever something was committed, opened or merged, it ends with a ready-to-paste Discord post, which it posts itself when the user asks (e.g. 'ship it and post to Discord'). Use whenever the user says 'PR it', 'commit and PR', 'open a PR then merge', 'PR and merge', 'merge it', 'clean up and archive', 'ship it', 'merged. clean up', or any combination of commit/PR/merge/cleanup/archive, even without the word 'ship'. Also use when the user says a PR was already merged or completed and the new change needs its own PR, or asks to resolve merge conflicts on a PR before merging."
+description: "Ship the current change: commit, push, open a PR, and optionally merge it, clean up the branch and worktree, and archive the session. Use it instead of running the commit, PR and merge steps by hand, even when the user's 'ship it' (or similar) approves a plan already agreed in the conversation. Whenever something was committed, opened or merged, it ends with a ready-to-paste Discord post. Use whenever the user says 'PR it', 'commit and PR', 'open a PR then merge', 'PR and merge', 'merge it', 'clean up and archive', 'ship it', 'merged. clean up', or any combination of commit/PR/merge/cleanup/archive, even without the word 'ship'. Also use when the user says a PR was already merged or completed and the new change needs its own PR, or asks to resolve merge conflicts on a PR before merging."
 ---
 
 # Ship
@@ -10,7 +10,7 @@ usually asks for a subset in a few words ("PR & merge", "merged. clean up then a
 exactly the steps they asked for, in order, without asking again for permission they've already
 given. The request *is* the authorization for the steps it names.
 
-Scripts in `scripts/`, next to this file, do the error-prone work the same way every
+Two scripts in `scripts/`, next to this file, do the error-prone git work the same way every
 time. Run them with `pwsh -NoProfile -File "<this skill's folder>/scripts/<name>.ps1"` from the
 repo or worktree (they work from either Bash or PowerShell). Use the skill's actual install path
 (the base directory the harness reports when it loads this skill), not a guessed one: as a plugin
@@ -21,8 +21,6 @@ it lives in the plugin cache, not `~/.claude/skills/`.
 - `post-merge-cleanup.ps1`: branch and worktree hygiene after a merge. `-DryRun` shows the plan.
 - `purge-session-files.ps1`: deletes the session's `ai-work/` and temp folder before cleanup or
   archive, and (with `-DiscardChanges`) its uncommitted changes. `-DryRun` shows sizes.
-- `post-discord.ps1`: posts the §9 announcement through a Discord webhook kept in an
-  environment variable, only when the user asked for it to be posted. `-DryRun` previews it.
 
 The desktop app's tools are deferred. Load the ones the scope needs in one call, e.g.
 `ToolSearch select:mcp__ccd_host__sync_with_base_branch,mcp__ccd_pr__get_status,mcp__ccd_pr__bind_pr,mcp__ccd_session_mgmt__archive_session`
@@ -39,7 +37,6 @@ isn't listed at all (e.g. a plain CLI session), use the git/gh fallback given in
 | "…with auto-merge" / "…and auto-fix" | open PR, then turn on the app switch instead of merging now (see §6) |
 | "clean up", "merged. clean up" | cleanup only (§7); the PR is already merged |
 | "…and archive", "archive this session when complete" | finish everything else, then archive (§8) |
-| "…and post to Discord", "post the announcement" | also post the §9 announcement with `post-discord.ps1` |
 
 If the scope is truly unclear (e.g. just "done?"), ask. Otherwise go.
 
@@ -225,7 +222,8 @@ friendly patch-notes voice with a little personality, never corporate or dry.
   in `<...>` to suppress the embed.
 - **Plain language:** no file names, branch names, refactors, test details or other internals
   users can't see. Never include secrets, private repo paths or personal details.
-- Put it in its own fenced code block so it copies cleanly.
+- Put it in its own fenced code block so it copies cleanly. Don't post it anywhere yourself;
+  sending a message on the user's behalf needs their explicit go-ahead.
 
 Example:
 
@@ -240,23 +238,3 @@ Example:
 
 Your game updates automatically. See you in the harbor! ⚓
 ```
-
-**Posting it (only when asked).** Post it yourself only when the user asked in this
-conversation to send or post the Discord message ("ship it and post to Discord", "post the
-announcement"). That request is the go-ahead for this one post; it doesn't carry over to later
-runs. Otherwise just show the block. When archiving, post before calling `archive_session`. To post:
-
-1. Write the post text, without the surrounding code fence, to a UTF-8 file in the scratchpad
-   (e.g. `discord-post.md`).
-2. Run `pwsh -NoProfile -File "<this skill's folder>/scripts/post-discord.ps1" -File <that
-   file>`. It reads the webhook from `$env:RR_DISCORD_WEBHOOK` (pass `-WebhookEnv <name>` for
-   another project's channel), disables @mentions, and rejects posts over 2000 characters.
-   `-DryRun` shows what would be sent. Never read, print or ask for the webhook URL yourself.
-   The default variable is Reckless Realms' channel: use it only when Reckless Realms shipped.
-   For another project pass its variable with `-WebhookEnv`; if none is known, don't post,
-   show the block and say which variable to set.
-3. Exit 0: say it was posted (no need to repeat the text). Any other exit: relay the script's
-   message and show the ready-to-paste block instead.
-
-Setup (the user does this once, in their own PowerShell, then restarts the app):
-`[Environment]::SetEnvironmentVariable('RR_DISCORD_WEBHOOK', '<webhook url>', 'User')`.
