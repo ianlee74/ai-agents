@@ -50,8 +50,7 @@ reject.
 
 ### S1. Set up once
 
-Do this only on the first cycle of a supervisor session; timer firings re-enter the skill and go
-straight to S2.
+Do this only on the first cycle of a supervisor session; later turns go straight to S2.
 
 1. Check `gh auth status` and note the login (`gh api user -q .login`).
 2. For each repo, `gh label list -R <repo> --limit 200` and confirm `needs-triage`, `triaging`,
@@ -64,10 +63,15 @@ straight to S2.
    has `"name": "reckless-realms"`, otherwise ask (usually `C:\Code\Reckless-Software\reckless-realms`).
    Workers always start from this game checkout, content tickets included, because reproducing a
    content issue needs the game.
-4. Tell the user: the repos watched, the cadence (default every 15 minutes; use theirs if given),
+4. Tell the user: the repos watched, the cadence (default every 5 minutes; use theirs if given),
    the concurrency cap (default 3 workers), and how to stop (tell this session to stop).
 
 ### S2. Each cycle
+
+**Every supervisor turn is a cycle.** A worker's completion note, a notice that the user archived
+a worker, the timer firing, or any user message: run this whole cycle on each, and start workers
+for waiting tickets up to the cap right away. A slot that frees up is refilled on that turn, never
+left for the next timer.
 
 1. For each watched repo:
 
@@ -76,16 +80,22 @@ straight to S2.
      --json number,title,labels,createdAt,url
    ```
 
-2. Skip a ticket if a worker this supervisor started for it is still running, or if it has the
+2. **Settle which workers are done first, from GitHub.** A worker's ticket is done when it no
+   longer has `needs-triage` (or was closed), or when its `triaging` label is gone and its claim
+   comment ends with "Released.". Count such a worker as finished whatever its session state says:
+   the user may have archived it, and an archived worker sends no completion note. Only workers
+   whose tickets aren't done count toward the cap. Mention any worker whose session ended (archived
+   or stopped) without its ticket being done; its ticket is waiting again.
+3. Skip a ticket if a worker this supervisor started for it hasn't finished (step 2), or if it has the
    `triaging` label and a live claim. A `triaging` label with no live claim is stale: a worker
    died (workers post the claim comment before adding the label, so a label without one is never
    a claim in progress). Clear it
    with `gh issue edit <N> -R <repo> --remove-label triaging` and a short comment saying the stale
    claim was released, then treat the ticket as waiting.
-3. Start workers for waiting tickets **oldest first**: merge both repos' lists and sort by
-   `createdAt`, earliest first (`gh issue list` returns newest first, so sort yourself). When the
-   cap is reached, the newest tickets wait for a later cycle, never the oldest. Count workers still
-   running toward the cap.
+4. Start workers for waiting tickets **oldest first**, filling every free slot now: merge both
+   repos' lists and sort by `createdAt`, earliest first (`gh issue list` returns newest first, so
+   sort yourself). When the cap is reached, the newest tickets wait for a later cycle, never the
+   oldest. Count workers whose tickets aren't done (step 2) toward the cap.
    Each worker gets its own worktree of the game checkout and this brief:
 
    > `/reckless-realms:triage <repo>#<N>` — triage `<url>` ("<title>"). Follow the triage skill's
@@ -93,11 +103,10 @@ straight to S2.
 
    Title each worker session `#<N>: <title>` (prefix `content` for the content repo:
    `content#<N>: <title>`).
-4. Report one line per cycle: tickets seen, workers started (link each), stale claims cleared.
-   Say nothing more when nothing changed.
-5. Schedule the next cycle. When a worker finishes, read its note, confirm on GitHub that the ticket
-   left `needs-triage` (or was closed), and mention any worker that ended without doing so. Archive
-   a finished worker that couldn't archive itself.
+5. Report one line per cycle: tickets seen, workers finished, workers started (link each), stale
+   claims cleared. Say nothing more when nothing changed.
+6. Keep the timer running (it is the backstop for turns nothing else triggers, such as a worker
+   the user archived). Archive a finished worker that couldn't archive itself.
 
 The supervisor doesn't claim tickets itself: the worker's claim is what stops other supervisors
 (on this machine or another) from doubling up, and the per-session list above stops this one from
