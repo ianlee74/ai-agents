@@ -41,6 +41,11 @@ Each worker:
 Workers only touch the ticket: no code edits, branches or pushes. Run `/reckless-realms:triage
 <repo>#<N>` (or `triage 133`) to triage one ticket directly.
 
+To spend no tokens while nothing is waiting, schedule `skills/triage/scripts/triage-poll.ps1`
+instead of running a supervisor session. It polls with `gh` and starts a background Claude Code
+worker (`claude --bg`) only for a waiting ticket. See
+[skills/triage/references/harness-cli.md](skills/triage/references/harness-cli.md).
+
 ### supervise-implementation
 
 Say "supervise implementation" or run `/reckless-realms:supervise-implementation` in a Claude
