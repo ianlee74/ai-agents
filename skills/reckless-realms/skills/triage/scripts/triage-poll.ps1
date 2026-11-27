@@ -64,6 +64,10 @@ function Invoke-Gh([string[]]$ghArgs) {
 
 function Get-Json([string[]]$ghArgs) { Invoke-Gh $ghArgs | ConvertFrom-Json -NoEnumerate }
 
+function Save-State {
+  if (-not $DryRun) { $state | ConvertTo-Json -Depth 5 | Set-Content $statePath }
+}
+
 function Test-LiveClaim($comment) {
   $body = [string]$comment.body
   if (-not $body.Contains($ClaimMarker)) { return $false }
@@ -117,7 +121,7 @@ try {
     if (-not ($t.Labels -contains 'triaging') -or $t.LiveClaim) { continue }
     $editArgs = @('issue', 'edit', "$($t.Number)", '-R', $t.Repo, '--remove-label', 'triaging')
     if ($t.Assignees -contains $login -and $t.Claims.Count) {
-      $lastClaim = ($t.Claims | ForEach-Object { [DateTimeOffset]$_.created_at } | Sort-Object)[-1]
+      $lastClaim = @($t.Claims | ForEach-Object { [DateTimeOffset]$_.created_at } | Sort-Object)[-1]
       $events = @(Get-Json @('api', "repos/$($t.Repo)/issues/$($t.Number)/events", '--paginate', '--slurp') |
         ForEach-Object { $_ } | ForEach-Object { $_ })
       $assigned = @($events | Where-Object { $_.event -eq 'assigned' -and $_.assignee.login -eq $login } |
@@ -140,57 +144,65 @@ try {
   }
 
   # 3. Settle this poller's workers and reap finished ones.
-  $busy = @{}
+  # Reap only on positive evidence: the worker is listed and not busy. If the listing fails, keep
+  # every worker (and its slot) until a later run can read it.
+  $agents = $null
   try {
-    foreach ($s in (& $Claude agents --json --all 2>$null | ConvertFrom-Json)) {
-      if ($s.status -eq 'busy') { $busy[[string]$s.name] = $true }
-    }
-  } catch { Write-Log "could not read claude agents: $_" }
+    $agents = @{}
+    foreach ($s in @(& $Claude agents --json --all 2>$null | ConvertFrom-Json)) { $agents[[string]$s.name] = [string]$s.status }
+  } catch { $agents = $null; Write-Log "could not read claude agents, so no worker is removed this run: $_" }
 
   $running = 0
   foreach ($key in @($state.Keys)) {
     $rec = $state[$key]
-    if (-not $rec.sessionId) { continue }
+    if (-not $rec['sessionId']) { continue }
     $t = $byKey[$key]
-    $launched = [DateTimeOffset]$rec.lastLaunch
+    $launched = [DateTimeOffset]$rec['lastLaunch']
     $inGrace = ($now - $launched) -lt [TimeSpan]::FromMinutes($GraceMinutes)
     $done = (-not $t) -or ((-not $t.LiveClaim) -and (-not $inGrace))
     if (-not $done) { $running++; continue }
-    if ($busy[[string]$rec.sessionName]) { continue }   # finished on GitHub, still wrapping up
-    Write-Log "${key}: worker $($rec.sessionId) finished; removing its session"
-    if (-not $DryRun) {
-      & $Claude rm $rec.sessionId 2>&1 | ForEach-Object { Write-Log "  claude rm: $_" }
+    if ($null -eq $agents) { $running++; continue }
+    $status = $agents[[string]$rec['sessionName']]
+    if ($null -eq $status) {
+      Write-Log "${key}: worker $($rec['sessionId']) is done but not listed by claude agents; remove it by hand if it remains (claude rm $($rec['sessionId']))"
+      $rec['sessionId'] = $null
+      continue
     }
-    $rec.sessionId = $null
+    if ($status -eq 'busy') { continue }   # done on GitHub, still wrapping up; its slot is free
+    Write-Log "${key}: worker $($rec['sessionId']) finished; removing its session"
+    if (-not $DryRun) {
+      & $Claude rm $rec['sessionId'] 2>&1 | ForEach-Object { Write-Log "  claude rm: $_" }
+    }
+    $rec['sessionId'] = $null
   }
   foreach ($key in @($state.Keys)) {          # ticket left needs-triage: forget it
-    if (-not $byKey[$key] -and -not $state[$key].sessionId) { $state.Remove($key) }
+    if (-not $byKey[$key] -and -not $state[$key]['sessionId']) { $state.Remove($key) }
   }
 
   # 4. Choose and start workers, oldest first.
   $waiting = @()
   foreach ($t in ($tickets | Sort-Object CreatedAt)) {
     $rec = $state[$t.Key]
-    if ($rec -and $rec.sessionId) { continue }          # our worker is on it
+    if ($rec -and $rec['sessionId']) { continue }          # our worker is on it
     if ($t.LiveClaim) { continue }                       # claimed, label or not (S2 step 3)
     if ($t.Assignees.Count) {
-      if ($t.Assignees -contains $login -and -not ($rec -and $rec.reportedAssigned)) {
+      if ($t.Assignees -contains $login -and -not ($rec -and $rec['reportedAssigned'])) {
         Write-Log "$($t.Key): assigned to $login with no live claim; triage skips it until it is unassigned"
         if (-not $rec) { $rec = @{ attempts = 0 }; $state[$t.Key] = $rec }
-        $rec.reportedAssigned = $true
+        $rec['reportedAssigned'] = $true
       }
       continue
     }
     if ($rec) {
-      $rec.reportedAssigned = $false
-      if ($rec.attempts -ge $MaxAttempts) {
-        if (-not $rec.reportedGaveUp) {
-          Write-Log "$($t.Key): $($rec.attempts) workers ended without triaging it; giving up (delete its entry in $statePath to retry)"
-          $rec.reportedGaveUp = $true
+      $rec['reportedAssigned'] = $false
+      if ($rec['attempts'] -ge $MaxAttempts) {
+        if (-not $rec['reportedGaveUp']) {
+          Write-Log "$($t.Key): $($rec['attempts']) workers ended without triaging it; giving up (delete its entry in $statePath to retry)"
+          $rec['reportedGaveUp'] = $true
         }
         continue
       }
-      if ($rec.lastLaunch -and ($now - [DateTimeOffset]$rec.lastLaunch) -lt [TimeSpan]::FromMinutes($BackoffMinutes)) { continue }
+      if ($rec['lastLaunch'] -and ($now - [DateTimeOffset]$rec['lastLaunch']) -lt [TimeSpan]::FromMinutes($BackoffMinutes)) { continue }
     }
     $waiting += $t
   }
@@ -214,17 +226,18 @@ try {
       $id = (@($out | ForEach-Object { "$_".Trim() } | Where-Object { $_ }))[-1]
       Write-Log "  started $id"
     }
-    $rec.attempts = [int]$rec.attempts + 1
-    $rec.lastLaunch = $now.ToString('o')
-    $rec.sessionId = $id
-    $rec.sessionName = $name
-    $rec.reportedGaveUp = $false
+    $rec['attempts'] = [int]$rec['attempts'] + 1
+    $rec['lastLaunch'] = $now.ToString('o')
+    $rec['sessionId'] = $id
+    $rec['sessionName'] = $name
+    $rec['reportedGaveUp'] = $false
+    Save-State   # a later error must not lose this launch, or the next run would start it again
   }
 
   $summary = "seen $($tickets.Count), running $running, waiting $($waiting.Count), started $($toStart.Count)"
   if ($toStart.Count -or $DryRun) { Write-Log $summary } else { Write-Verbose $summary }
 
-  if (-not $DryRun) { $state | ConvertTo-Json -Depth 5 | Set-Content $statePath }
+  Save-State
 }
 catch { Write-Log "error: $_"; exit 1 }
 finally { $lock.Dispose() }

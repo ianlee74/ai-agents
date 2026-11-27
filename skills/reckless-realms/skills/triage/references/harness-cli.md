@@ -13,7 +13,7 @@ clears stale claims, removes finished workers, and starts workers with
 2. `gh auth status` must show the account that triages. Workers and the script use that login.
 3. The game checkout (default `C:\Code\Reckless-Software\reckless-realms`, `-GameCheckout` to
    change it) must have its setup done (`npm run setup`) so workers can run a live repro.
-   Workers' worktrees go under its `.claude\worktrees\`. The script keeps `state.json`,
+   `claude -w` creates each worker's worktree from it. The script keeps `state.json`,
    `poll.lock` and `poll.log` in its `ai-work\triage-poller\`.
 4. Check it with a dry run, which reads GitHub and writes nothing:
 
@@ -42,8 +42,10 @@ clears stale claims, removes finished workers, and starts workers with
   worker's assignment when the events show it made that assignment.
 - **Launch-to-claim gap:** a worker it started counts as running for `-GraceMinutes` (20) even
   before its claim appears, and after that for as long as the ticket has a live claim. When the ticket leaves
-  `needs-triage`, or the grace period ends with no live claim, the worker is finished. Once
-  `claude agents` no longer shows it busy, `claude rm` deletes the session and its worktree.
+  `needs-triage`, or the grace period ends with no live claim, the worker is finished. If
+  `claude agents --json --all` lists it and not as busy, `claude rm` deletes the session and its
+  worktree. A finished worker that isn't listed is logged for removal by hand. If the listing
+  fails, nothing is removed that run.
 - **Retries:** a ticket whose worker ended without triaging it is retried after
   `-BackoffMinutes` (30), at most `-MaxAttempts` (3) times. After that the log says it gave up.
   Delete the ticket's entry in `state.json` to retry it.
@@ -66,5 +68,6 @@ The poll script's prompt says the worker is a background worker. In that case:
 - **Never ask questions or wait for input.** Nobody is attached. Take the "Needs a human" outcome
   instead. If a tool call needs approval and is refused, treat it as a failure: release the claim
   (W6) and end.
-- **Live repro (W4):** the `reckless-realms:test` skill works as in the desktop app. Always pass
-  `--pid` to bridge commands, and stop the test game before ending.
+- **Live repro (W4):** use the `reckless-realms:test` skill as in the desktop app. It hasn't yet
+  been run from a background worker, so if it can't start a game here, skip the live run and say
+  so in the spec. Always pass `--pid` to bridge commands, and stop the test game before ending.
