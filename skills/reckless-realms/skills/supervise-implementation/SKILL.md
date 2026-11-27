@@ -1,12 +1,12 @@
 ---
 name: supervise-implementation
-description: "Supervise implementation of Reckless Realms GitHub tickets labelled AI READY, in both Reckless-Software/reckless-realms and Reckless-Software/reckless-realms-content. Starts one worker session per open, unassigned ticket (oldest first, up to 3 in flight) that uses sdlc:implement-issue to claim, build, verify and open PRs, shipping big tickets as small slices; keeps every worker moving without asking the user; merges each PR as soon as it is ready (batching releases with [skip ci]); posts one player-facing Discord note per release; and archives and cleans up each worker only after its ticket is closed, its PRs are merged and its note is posted. Answers 'status' with a fixed table. Use whenever the user says 'supervise implementation', 'work the AI READY tickets', 'start implementation supervisor', 'implement the ready tickets', or asks for a supervisor that picks up AI READY tickets, even without naming the skill."
+description: "Supervise implementation of Reckless Realms GitHub tickets labelled AI READY, in both Reckless-Software/reckless-realms and Reckless-Software/reckless-realms-content. Starts one worker session per open, unassigned ticket (oldest first, up to 3 in flight) that uses sdlc:implement-issue to claim, build, verify and open PRs, shipping big tickets as small slices; keeps every worker moving without asking the user; merges each PR as soon as it is ready (batching releases with [skip ci]); sweeps every open PR for merge conflicts after each merge and on every turn, starting a resolver session per conflicting PR that merges main, re-checks and pushes the fix to the PR; posts one player-facing Discord note per release; and archives and cleans up each worker only after its ticket is closed, its PRs are merged and its note is posted. Answers 'status' with a fixed table. Use whenever the user says 'supervise implementation', 'work the AI READY tickets', 'start implementation supervisor', 'implement the ready tickets', or asks for a supervisor that picks up AI READY tickets, even without naming the skill."
 ---
 
 # Supervise implementation of AI READY tickets
 
 The supervisor never writes code itself. It starts workers, answers their questions, merges their
-PRs, announces releases and cleans up. Harness details (starting, messaging and archiving
+PRs, keeps open PRs free of merge conflicts, announces releases and cleans up. Harness details (starting, messaging and archiving
 sessions, why timers break the chain) are in
 [references/harness-claude-code.md](references/harness-claude-code.md). Read it when running in
 Claude Code.
@@ -31,6 +31,8 @@ workers verbatim.
   next slice?" (always yes) and running the unit suite (`npm run test:unit`) are the
   supervisor's call. Answer them yourself and tell the worker to keep going.
 - **Shipping:** merge each PR as soon as it's ready. Don't wait for a "ship it".
+- **Merge conflicts:** start a resolver session for each conflicting PR and let it push the
+  resolution to the PR's branch. Don't ask first.
 - **Discord:** post the player-facing note for each release without asking.
 
 Ask the user only about major questions the supervisor can't resolve: a design choice the ticket
@@ -111,12 +113,12 @@ Every time a worker ends a turn, read its note and do the matching step:
 | A question the supervisor owns (proposal, scope, next slice, test run) | Answer yes with the reason, quoting the user's words, and tell it to keep going. |
 | PR(s) open and ready | Merge them (section 4), then tell the worker what merged and to go on with the next slice, or that the ticket is done if it was the last. |
 | Draft PR, or "not verified in a running client" | Tell it to verify and mark the PR ready; merge only after that. |
-| Merge conflict | Tell the worker to merge `origin/main`, resolve, re-check and push. |
+| Merge conflict | Run the conflict sweep (section 5); a resolver session fixes it. |
 | Slice waits on another ticket | Make sure it commented on the ticket (what shipped, what's waiting). Leave the ticket open and the session unarchived; it no longer takes a slot. |
 | Blocked by its own permission check | See "Blocked workers". |
 | A major question only the user can settle | Ask the user, with a link to the session. |
 
-Then start workers for any free slots (section 2).
+Then run the conflict sweep (section 5) and start workers for any free slots (section 2).
 
 ## 4. Merge and release
 
@@ -128,16 +130,64 @@ Then start workers for any free slots (section 2).
    - Test-only and docs-only PRs always get `[skip ci]`.
    - Content PRs don't release by themselves; the next game release ships content `main`.
 3. Check every PR in the batch (step 1) before merging any, choose the release PR from the
-   mergeable player-facing ones and merge it last. A PR that fails with a conflict goes back to its
-   worker (section 3); go on with the rest. If the release PR itself fails, the next release
+   mergeable player-facing ones and merge it last. A PR that fails with a conflict goes to a resolver
+   (section 5); go on with the rest. If the release PR itself fails, the next release
    carries the batch.
 4. Confirm with `git fetch origin main` and `git log origin/main --oneline -5`.
 5. After a ticket's final PR merges, check `gh issue view <N> -R <repo> --json state`. If the
    closing keyword didn't fire, close it (`gh issue close <N> -R <repo> --reason completed`) with a
    comment naming the PRs.
 6. If auto mode blocks merges, list the ready PRs to the user and get one go-ahead for the batch.
+7. Run the conflict sweep (section 5) right after the batch: each merge can put other open PRs in
+   conflict.
 
-## 5. Discord note (per release, never per closed issue)
+## 5. Conflict sweep
+
+PRs merge quickly, so open PRs fall into conflict with each other. Sweep **every** open PR in both
+repos (not only this supervisor's), on every supervisor turn (user turns and
+`<side-sessions-event>` turns) and right after every merge batch:
+
+```bash
+gh pr list -R <repo> --state open --json number,title,headRefName,baseRefName,isDraft,mergeable,mergeStateStatus,url
+```
+
+- **Conflicting:** `mergeable` is `CONFLICTING` (or `mergeStateStatus` is `DIRTY`).
+- **Unknown:** GitHub computes `mergeable` lazily, so it reads `UNKNOWN` just after a merge.
+  Re-check those PRs one at a time with `gh pr view` once the rest of the sweep is done; if still
+  unknown, check them on the next turn.
+- Skip PRs from forks and PRs not based on `main`; report them to the user instead.
+
+For each conflicting PR that has no resolver yet, **start a resolver session** (one per PR, in
+parallel, alongside any worker starts; resolvers don't take ticket slots). Its brief:
+
+- `Resolve the merge conflict on <repo> PR #<P> ("<title>", <url>), branch <headRefName>.`
+- Work in a fresh worktree of that repo. Don't check out the PR branch by name (its worker may
+  have it checked out): `git fetch origin main <headRefName>`, then
+  `git switch -c resolve-pr-<P> origin/<headRefName>`.
+- `git merge origin/main` (never rebase, never force-push), resolve keeping both sides' intent,
+  read the PR's description and ticket for what the PR means to do, then run the checks the
+  conflicted files need (`npm run test:unit` at least, per `AGENTS.md`).
+- Push with `git push origin HEAD:<headRefName>`. A rejected push means the branch moved: fetch,
+  merge again and retry.
+- If the conflict is not mechanical (both sides changed the same behaviour and the right result
+  isn't clear), don't guess: stop and report what conflicts and why.
+- Never merge the PR and never post to Discord. End with the PR URL and `mergeable` from
+  `gh pr view`.
+- Quote the user's own request words (section 1), and say the supervisor starts resolvers and
+  merges the PR, so the resolver should push without waiting for the user.
+
+When a resolver reports:
+
+1. Check the PR on GitHub (section 4, step 1). If it is `MERGEABLE` / `CLEAN`, merge it now in
+   the normal way (section 4): a resolved PR left waiting goes stale again.
+2. If the PR's worker session is still open, tell it its branch was updated on the remote and to
+   `git pull` before pushing to it again.
+3. If the resolver stopped on a non-mechanical conflict, send it to the PR's worker if one is
+   open; otherwise ask the user, with links to the PR and the resolver session.
+4. Archive the resolver once its PR is merged, closed or handed to a worker, and delete its
+   `resolve-pr-<P>` local branch.
+
+## 6. Discord note (per release, never per closed issue)
 
 Keep a list of **player-facing slices merged since the last release**, including `[skip ci]`
 merges. After each merge that releases, post **one** note covering every slice on that list, then
@@ -162,7 +212,7 @@ sign-off line, about 1000 characters at most.
 If a release ends up with two posts, delete the later one (`DELETE $url/messages/<id>`, returns
 204) without asking.
 
-## 6. Clean up a finished ticket
+## 7. Clean up a finished ticket
 
 Only when the ticket is **closed**, **every** PR for it is merged **and** every
 player-facing slice of it has been in a posted Discord note (a ticket with none needs no note;
@@ -187,8 +237,8 @@ When a worker's own permission check refuses a push, PR create or full-suite run
 
 ## Status
 
-When the user asks for status, reply with one table of **active (unarchived) worker sessions
-only**:
+When the user asks for status, reply with one table of **active (unarchived) worker and resolver
+sessions only** (a resolver's `#` is its PR, its Title `Resolve conflict: <PR title>`):
 
 | # | Title | Status | Session | Waiting on you? |
 | --- | --- | --- | --- | --- |

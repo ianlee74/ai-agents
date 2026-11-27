@@ -12,9 +12,9 @@ moving:
 
 1. Start each worker with `wake_when_done: true`.
 2. When no worker is still working, the app continues the supervisor with a
-   `<side-sessions-event>` turn. Handle every note in it (section 3) and start the next workers
-   there.
-3. Any user turn also continues the chain: check GitHub and refill free slots.
+   `<side-sessions-event>` turn. Handle every note in it (section 3), run the conflict sweep
+   (section 5) and start the next workers and resolvers there.
+3. Any user turn also continues the chain: sweep for conflicts, check GitHub and refill free slots.
 4. If a start is refused anyway, say in one line that the next user message will start it, and
    start it on that message.
 
@@ -26,7 +26,15 @@ moving:
 `background` naming the repo, the ticket URL and that the supervisor merges and posts to Discord.
 Keep each returned id against its ticket.
 
-Send the start calls for every free slot in parallel in one message: the `start_session` result
+## Starting a resolver
+
+Same call as a worker, with `title: "Resolve conflict: <repo short name>#<P>"`, `name` such as
+`resolve-pr-<P>`, the resolver brief (SKILL.md section 5) as `prompt`, and `background` naming the
+repo, the PR URL, its branch and that the supervisor merges. For a content PR, pass the content
+checkout as `cwd` so its worktree is cut from that repo. Keep each id against its PR so the next
+sweep doesn't start a second resolver for it.
+
+Send the start calls for every free slot and every conflicting PR in parallel in one message: the `start_session` result
 tells you to end the turn, so a start sent afterwards never happens.
 
 ## Talking to workers

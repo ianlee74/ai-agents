@@ -55,6 +55,9 @@ supervisor:
 - ships big tickets as small, self-contained slices (on by default), one PR each;
 - merges each PR as soon as it's ready, with `[skip ci]` on all but the last player-facing merge of
   a batch, so one release covers the batch;
+- sweeps every open PR in both repos for merge conflicts after each merge and on every turn, and
+  starts a resolver session per conflicting PR that merges `main`, re-runs the unit suite and
+  pushes the fix to the PR, then merges it;
 - posts one player-facing Discord note per release through the `RR_DISCORD_WEBHOOK` user
   environment variable;
 - archives a worker and removes its worktrees and merged branches once its ticket is closed, its
