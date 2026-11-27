@@ -23,7 +23,7 @@
       "name": "reckless-realms",
       "source": "./skills/reckless-realms",
       "description": "Skills for developing the Reckless Realms game. Includes test, which starts a local test game from the current session's reckless-realms checkout with the client dev bridge enabled and connects to the bridge; triage, a supervisor that watches both Reckless Realms repos for needs-triage tickets and starts a worker session per ticket to claim, research, reproduce and spec it, then mark it AI READY; and supervise-implementation, a supervisor that starts a worker session per AI READY ticket to build it with sdlc:implement-issue, merges each PR as it is ready, posts one Discord note per release and cleans up.",
-      "version": "0.4.2"
+      "version": "0.5.0"
     }
   ]
 }
