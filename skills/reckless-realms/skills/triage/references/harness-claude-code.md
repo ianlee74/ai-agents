@@ -23,10 +23,35 @@ These need the Claude desktop app (Code tab). Most tools are deferred: load them
   ticket URL, the repo and that this is an unattended triage worker. Keep each returned session id
   and name against its ticket; that is the "worker still running" list. `list_sessions`
   `{"linked": true}` shows their state.
-- **If a start is refused** on a timer turn, fall back to a one-shot scheduled task:
-  `mcp__scheduled-tasks__create_scheduled_task` with `fireAt` a minute from now, `taskId`
-  `triage-<repo>-<N>`, and the brief as `prompt` (self-contained: repo, number, URL, "use the
-  reckless-realms:triage skill's worker mode"). Note it in the cycle report so the user knows why.
+- **Start every free slot in one message.** The `start_session` result tells you to end your turn,
+  so a second start sent afterwards never happens. Send the start calls for all free slots in
+  parallel in a single message, together with any timer change (see below), then end the turn.
+- **Never ask the user to start workers.** The supervisor starts them on its own. No permission
+  questions, no "Go" buttons, no `wrap_up` question about a refused start: report it, nothing more.
+- **If a start is refused:** under Remote Control, timer turns can't start sessions (the refusal
+  says "The user is working over Remote Control, and this turn can't start that session"). Starts
+  do work on a turn with a real user message, such as a typed `/reckless-realms:triage`.
+  - List the refused tickets in the one-line cycle report and retry them on the next turn that has
+    a user message.
+  - The one-shot scheduled-task fallback (`mcp__scheduled-tasks__create_scheduled_task`, `fireAt`
+    a minute from now, `taskId` `triage-<repo>-<N>`, a self-contained brief naming repo, number,
+    URL and "use the reckless-realms:triage skill's worker mode") is usually blocked by the
+    auto-mode classifier. Try it at most once per supervisor session; if it's blocked, don't try
+    it again.
+  - While starts are blocked, slow the timer to about 30 minutes: create a cron such as
+    `7,37 * * * *` and delete the 5-minute one. After the first successful start, recreate
+    `2-59/5 * * * *` and delete the slow cron.
+  - Send at most one push notification (`PushNotification`) about the blocked backlog per
+    supervisor session, not one per cycle.
+  - Never turn Remote Control off (`set_remote_control`) to get around it, and never triage a
+    ticket in the supervisor or in a subagent instead.
+- **Long-running supervisors:** after many cycles the session hits "conversation too long for auto
+  mode's classifier" and needs `/compact`. To delay that:
+  - Keep cycle turns lean: one `gh issue list` per repo, no re-reading of this skill or other
+    files.
+  - On a cycle where nothing changed, give the shortest possible recap and closing line (S2 step
+    5: say nothing more).
+  - After many cycles (a few hours), compact or restart the supervisor.
 - **Permission mode:** workers inherit the supervisor's mode. Unattended work goes much smoother in
   auto mode; if the supervisor isn't in it, say once at setup that workers may stop on approval
   prompts.
