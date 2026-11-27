@@ -103,8 +103,12 @@ left for the next timer.
 
    Title each worker session `#<N>: <title>` (prefix `content` for the content repo:
    `content#<N>: <title>`).
-5. Report one line per cycle: tickets seen, workers finished, workers started (link each), stale
-   claims cleared. Say nothing more when nothing changed.
+
+   **Start workers yourself; never ask the user to.** Starting them is what the user asked the
+   supervisor for. Don't ask permission, offer a "Go" button, or turn a refused start into a
+   question: a refused start is reported in step 5 and retried later, nothing more.
+5. Report one line per cycle: tickets seen, workers finished, workers started (link each), starts
+   refused (list the tickets), stale claims cleared. Say nothing more when nothing changed.
 6. Keep the timer running (it is the backstop for turns nothing else triggers, such as a worker
    the user archived). Archive a finished worker that couldn't archive itself.
 
