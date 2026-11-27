@@ -41,6 +41,28 @@ Each worker:
 Workers only touch the ticket: no code edits, branches or pushes. Run `/reckless-realms:triage
 <repo>#<N>` (or `triage 133`) to triage one ticket directly.
 
+### supervise-implementation
+
+Say "supervise implementation" or run `/reckless-realms:supervise-implementation` in a Claude
+desktop session. The session becomes a supervisor that watches `reckless-realms` and
+`reckless-realms-content` for open, unassigned tickets labelled `AI READY` and starts one worker
+session per ticket (oldest first, up to 3 in flight), titled `#N: title`. Each worker uses
+`sdlc:implement-issue` to claim, build, verify and open PRs, and never merges or posts. The
+supervisor:
+
+- answers workers' proposal, scope and next-slice questions itself, asking the user only about
+  major unsettled questions;
+- ships big tickets as small, self-contained slices (on by default), one PR each;
+- merges each PR as soon as it's ready, with `[skip ci]` on all but the last player-facing merge of
+  a batch, so one release covers the batch;
+- posts one player-facing Discord note per release through the `RR_DISCORD_WEBHOOK` user
+  environment variable;
+- archives a worker and removes its worktrees and merged branches once its ticket is closed, its
+  PRs are merged and its note is posted;
+- answers "status" with a table of active workers.
+
+It uses no timers: workers wake the supervisor when they finish.
+
 ## Install
 
 ### Claude Code

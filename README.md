@@ -16,7 +16,9 @@ notes.
 - [sdlc](skills/sdlc/README.md): `implement-issue` works a GitHub issue from claim to finished change; `ship` closes out a coding session: commit, PR, merge, branch and
   worktree cleanup, and archive.
 - [reckless-realms](skills/reckless-realms/README.md): `test` starts a local Reckless Realms test
-  game from the session's checkout with the client dev bridge connected.
+  game from the session's checkout with the client dev bridge connected; `triage` and
+  `supervise-implementation` supervise worker sessions that triage `needs-triage` tickets and
+  build `AI READY` tickets.
 
 Claude Code users can install everything from this repo's marketplace:
 
