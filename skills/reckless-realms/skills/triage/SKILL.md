@@ -12,9 +12,19 @@ Two modes, chosen by the arguments:
 - **Worker** (`<repo>#<N>`, a bare number for the game repo, or an issue URL): triage that one
   ticket from claim to release, then archive its own session.
 
+The supervisor runs one of two ways. Run only one at a time:
+
+- **Poll script (lowest tokens):** [scripts/triage-poll.ps1](scripts/triage-poll.ps1) does a whole
+  supervisor cycle (S2) with `gh` and no model. A scheduled task runs it every few minutes, and it
+  starts a background Claude Code worker only when a ticket is waiting. A cycle with nothing to do
+  costs no tokens. Setup is in [references/harness-cli.md](references/harness-cli.md).
+- **Supervisor session:** a Claude desktop session running this skill with no ticket. Each cycle
+  is a model turn, but workers appear in the app's sidebar.
+
 Harness details (timers, starting and archiving sessions, renaming) are in
-[references/harness-claude-code.md](references/harness-claude-code.md). Read it when running in
-Claude Code.
+[references/harness-claude-code.md](references/harness-claude-code.md) for a desktop session, and
+in [references/harness-cli.md](references/harness-cli.md) for a background worker the poll script
+started (its prompt says so). Read the one that matches where you run.
 
 | Repo | Short name |
 | --- | --- |
@@ -94,7 +104,10 @@ left for the next timer.
    whose tickets aren't done count toward the cap. Mention any worker whose session ended (archived
    or stopped) without its ticket being done; its ticket is waiting again.
 3. Skip a ticket if a worker this supervisor started for it hasn't finished (step 2), or if it has
-   the `triaging` label and a live claim. A `triaging` label with no live claim is stale: a worker
+   a live claim, with or without the `triaging` label. (A worker that died between posting its
+   claim and adding the label leaves a live claim with no label. Starting another worker would only
+   see that claim and exit, wasting a start every cycle until the claim expires.) A `triaging`
+   label with no live claim is stale: a worker
    died (workers post the claim comment before adding the label, so a label without one is never
    a claim in progress). Clear it with `gh issue edit <N> -R <repo> --remove-label triaging`,
    plus `--remove-assignee @me` when the login's latest `assigned` event
@@ -103,7 +116,10 @@ left for the next timer.
    saying the stale claim was released. Then judge the ticket as below.
 
    After that, skip any ticket that still has an assignee: someone has claimed it. Leave it, its
-   labels and its assignees alone.
+   labels and its assignees alone. If the assignee is the login and the ticket has no live claim,
+   report it in step 5 the first time you see it: it is either the user's own claim or a dead
+   worker's assignment that this step couldn't attribute, and the user must unassign it for
+   triage to take it.
 4. Start workers for waiting tickets **oldest first**, filling every free slot now: merge both
    repos' lists and sort by `createdAt`, earliest first (`gh issue list` returns newest first, so
    sort yourself). When the cap is reached, the newest tickets wait for a later cycle, never the
@@ -120,7 +136,8 @@ left for the next timer.
    supervisor for. Don't ask permission, offer a "Go" button, or turn a refused start into a
    question: a refused start is reported in step 5 and retried later, nothing more.
 5. Report one line per cycle: tickets seen, workers finished, workers started (link each), starts
-   refused (list the tickets), stale claims cleared. Say nothing more when nothing changed.
+   refused (list the tickets), stale claims cleared, and tickets newly found assigned to the login
+   without a live claim (step 3). Say nothing more when nothing changed.
 6. Keep the timer running (it is the backstop for turns nothing else triggers, such as a worker
    the user archived). Archive a finished worker that couldn't archive itself.
 
